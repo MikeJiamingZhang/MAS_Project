@@ -27,7 +27,6 @@ import java.util.List;
 //referencing https://firebase.google.com/docs/auth/android/firebaseui#java
 public class authentication extends AppCompatActivity {
 
-
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result){
         IdpResponse response = result.getIdpResponse();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -59,6 +58,7 @@ public class authentication extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Toast.makeText(getApplicationContext(), "check", Toast.LENGTH_LONG).show();
         List<AuthUI.IdpConfig> providers = Arrays.asList(new AuthUI.IdpConfig.EmailBuilder().build());
         Intent signInIntent = AuthUI.getInstance()
                 .createSignInIntentBuilder()
