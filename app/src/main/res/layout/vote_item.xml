@@ -1,0 +1,37 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/locationName"
+        android:layout_width="80dp"
+        android:layout_height="77dp"
+        android:gravity="center"
+        android:paddingBottom="4dp"
+        android:text="Location"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/voteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#FFEB3B"
+        android:padding="8dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="Vote!"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/voteCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Votes: 0"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:paddingTop="4dp"/>
+</LinearLayout>
