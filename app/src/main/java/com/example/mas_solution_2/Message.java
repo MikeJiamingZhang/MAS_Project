@@ -2,6 +2,7 @@ package com.example.mas_solution_2;
 
 import com.google.firebase.Timestamp;
 
+// We have no tuple (from someone came from Python), so create a class
 public class Message {
     String message;
     String sender;
