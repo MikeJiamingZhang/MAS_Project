@@ -30,7 +30,7 @@ import android.widget.Toast;
 
 import java.util.*;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements voteAdapter.voteListener{
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         // set up the vote view screen
         voteView = findViewById(R.id.voteRecyclerView);
-        voteadapter = new voteAdapter(locationList);
+        voteadapter = new voteAdapter(locationList, this);
         RecyclerView.LayoutManager layoutManager2 = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.HORIZONTAL, false);
         voteView.setLayoutManager(layoutManager2);
         voteView.setItemAnimator(new DefaultItemAnimator());
@@ -194,20 +194,37 @@ public class MainActivity extends AppCompatActivity {
                     locationList = new ArrayList<voteItem>();
                     for (QueryDocumentSnapshot doc : value) {
                         locationList.add(new voteItem(doc.getString("location"), Math.toIntExact(doc.getLong("vote"))));
-                        voteadapter.updateData(locationList);
                     }
+                    // sort to include the higehst vote
+                    // reference https://stackoverflow.com/questions/4066538/sort-an-arraylist-based-on-an-object-field
+                    Collections.sort(locationList, new Comparator<voteItem>(){
+                        public int compare(voteItem o1, voteItem o2){
+                            if(o1.vote == o2.vote)
+                                return 0;
+                            return o1.vote < o2.vote ? 1 : -1;
+                        }
+                    });
+                    voteadapter.updateData(locationList);
                 }
             }
         });
     }
 
 
-
+    // unregister listeners
     @Override
     protected void onDestroy() {
         if (messageListener != null){
             messageListener.remove();
         }
+        if(locationListener != null){
+            locationListener.remove();
+        }
         super.onDestroy();
+    }
+
+    @Override
+    public void onClick(String locName) {
+        vote("001", locName);
     }
 }
