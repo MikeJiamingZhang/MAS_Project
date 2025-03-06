@@ -153,12 +153,37 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     // vote message on this location
     // reference https://stackoverflow.com/questions/51054114/firebase-cloud-firestore-query-whereequalto-for-reference
     public void vote(String room, String location){
+        String uid = FirebaseAuth.getInstance().getUid();
         // does location exist?
         CollectionReference voteLocation = firestore.collection("chatHistory").document(room).collection("votes");
         voteLocation.whereEqualTo("location", location).get().addOnSuccessListener(querySnapshot -> {
             if(querySnapshot.size() != 0){
                 DocumentReference ref = querySnapshot.getDocuments().get(0).getReference(); // there should only be 1
-                ref.update("vote", FieldValue.increment(1));
+                ref.get().addOnSuccessListener(documentSnapshot -> {
+                    if(documentSnapshot.exists()){
+                        List<String> voters = (List<String>) documentSnapshot.get("voters");
+                        if (voters != null && voters.contains(uid)) {
+                            //Toast.makeText(getApplicationContext(), "You have already voted!", Toast.LENGTH_SHORT).show();
+                            ref.update(
+                                    "vote", FieldValue.increment(-1),
+                                    "voters", FieldValue.arrayRemove(uid)
+                            ).addOnSuccessListener(aVoid ->
+                                    Toast.makeText(getApplicationContext(), "Retracted!", Toast.LENGTH_SHORT).show()
+                            ).addOnFailureListener(e ->
+                                    Toast.makeText(getApplicationContext(), "Retract failed!", Toast.LENGTH_SHORT).show()
+                            );
+                        } else {
+                            ref.update(
+                                    "vote", FieldValue.increment(1),
+                                    "voters", FieldValue.arrayUnion(uid)
+                            ).addOnSuccessListener(aVoid ->
+                                    Toast.makeText(getApplicationContext(), "Vote counted!", Toast.LENGTH_SHORT).show()
+                            ).addOnFailureListener(e ->
+                                    Toast.makeText(getApplicationContext(), "Vote failed!", Toast.LENGTH_SHORT).show()
+                            );
+                        }
+                    }
+                });
             } else {
                 Toast.makeText(getApplicationContext(), "Location doesn't exist yet", Toast.LENGTH_LONG).show();
             }
@@ -173,6 +198,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 Map<String, Object> data = new HashMap<>();
                 data.put("location", location);
                 data.put("vote", 0);
+                data.put("voters", new ArrayList<String>());
                 voteLocation.add(data);
             } else {
                 Toast.makeText(getApplicationContext(), "Location exists, please vote!", Toast.LENGTH_LONG).show();
