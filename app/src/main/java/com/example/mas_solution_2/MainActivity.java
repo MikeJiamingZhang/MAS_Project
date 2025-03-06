@@ -30,6 +30,22 @@ import android.widget.Toast;
 
 import java.util.*;
 
+// Firestore structure
+/*
+    chatHistory
+        /Room Name/
+            messages
+                message
+                    message
+                    sender
+                    time
+            photos (not imeplemented)
+            votes
+                vote
+                    location
+                    vote
+                    voters (arraylist)
+ */
 public class MainActivity extends AppCompatActivity implements voteAdapter.voteListener{
 
     private AppBarConfiguration appBarConfiguration;
@@ -163,7 +179,6 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                     if(documentSnapshot.exists()){
                         List<String> voters = (List<String>) documentSnapshot.get("voters");
                         if (voters != null && voters.contains(uid)) {
-                            //Toast.makeText(getApplicationContext(), "You have already voted!", Toast.LENGTH_SHORT).show();
                             ref.update(
                                     "vote", FieldValue.increment(-1),
                                     "voters", FieldValue.arrayRemove(uid)
