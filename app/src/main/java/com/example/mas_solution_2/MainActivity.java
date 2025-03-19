@@ -5,7 +5,7 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.navigation.ui.AppBarConfiguration;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,9 +23,11 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.*;
@@ -39,7 +41,7 @@ import java.util.*;
                     message
                     sender
                     time
-            photos (not imeplemented)
+            photos (not implemented)
             votes
                 vote
                     location
@@ -48,11 +50,10 @@ import java.util.*;
  */
 public class MainActivity extends AppCompatActivity implements voteAdapter.voteListener{
 
-    private AppBarConfiguration appBarConfiguration;
-    private ActivityMainBinding binding;
+    private Toolbar toolbar;
     private FirebaseFirestore firestore = FirebaseFirestore.getInstance(); // the storage we will be using
-    private Button sendMessageButton; // click to send message
-    private Button addLocationButton; // click to add anther location to vote list
+    private ImageButton sendMessageButton; // click to send message
+    private ImageButton addLocationButton; // click to add another location to vote list
     private EditText msgInput; // input message
     private ListenerRegistration messageListener;
     private ListenerRegistration locationListener;
@@ -62,12 +63,16 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private RecyclerView voteView;
     private chatAdapter adapter;
     private voteAdapter voteadapter;
-
+    private String hangoutId;
+    private String groupId;
+    private String roomId = "001"; // Default room
+    private String groupName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // log in
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         // if user not signed in, then start logging in process
@@ -75,11 +80,43 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             Toast.makeText(getApplicationContext(), "Need to Log In", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(this, authentication.class);
             startActivity(intent);
-        } // continue
+            finish();
+            return;
+        }
+
+        // Set up toolbar
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Group Chat");
+
+        // Get hangout ID from intent if available
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            hangoutId = extras.getString("HANGOUT_ID", "");
+            groupId = extras.getString("GROUP_ID", "");
+            groupName = extras.getString("GROUP_NAME", "");
+
+            if (!hangoutId.isEmpty()) {
+                roomId = hangoutId; // Use hangout ID as room ID
+                if (!groupName.isEmpty()) {
+                    getSupportActionBar().setTitle(groupName);
+                } else {
+                    loadHangoutDetails();
+                }
+            } else if (!groupId.isEmpty()) {
+                roomId = groupId; // Use group ID as room ID
+                if (!groupName.isEmpty()) {
+                    getSupportActionBar().setTitle(groupName);
+                } else {
+                    loadGroupDetails();
+                }
+            }
+        }
+
         sendMessageButton = findViewById(R.id.sendMessage);
         addLocationButton = findViewById(R.id.addLocation);
         msgInput = findViewById(R.id.msgInput);
-
 
         // Click the button, send the text in the text field
         sendMessageButton.setOnClickListener(new View.OnClickListener() {
@@ -87,9 +124,8 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             public void onClick(View v) {
                 String text = msgInput.getText().toString();
                 if(!text.equals("")){
-                    sendMessage("001", FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
+                    sendMessage(roomId, FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
                     msgInput.setText("");
-                    //Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -100,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             public void onClick(View v) {
                 String text = msgInput.getText().toString();
                 if(!text.equals("")){
-                    addLocation("001", text);
+                    addLocation(roomId, text);
                     msgInput.setText("");
                 }
             }
@@ -115,8 +151,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         chatView.setAdapter(adapter);
 
         // Calling to receive messages
-        receiveMessage("001");
-
+        receiveMessage(roomId);
 
         // set up the vote view screen
         voteView = findViewById(R.id.voteRecyclerView);
@@ -127,7 +162,39 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         voteView.setAdapter(voteadapter);
 
         // calling to receive updates on votes
-        receiveVoteLocations("001");
+        receiveVoteLocations(roomId);
+    }
+
+    private void loadHangoutDetails() {
+        if (hangoutId == null || hangoutId.isEmpty()) return;
+
+        // Load hangout details to set the toolbar title
+        firestore.collection("hangouts").document(hangoutId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String hangoutName = documentSnapshot.getString("name");
+                        if (hangoutName != null && !hangoutName.isEmpty()) {
+                            getSupportActionBar().setTitle(hangoutName + " Chat");
+                        }
+                    }
+                });
+    }
+
+    private void loadGroupDetails() {
+        if (groupId == null || groupId.isEmpty()) return;
+
+        // Load group details to set the toolbar title
+        firestore.collection("groups").document(groupId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String groupName = documentSnapshot.getString("name");
+                        if (groupName != null && !groupName.isEmpty()) {
+                            getSupportActionBar().setTitle(groupName + " Chat");
+                        }
+                    }
+                });
     }
 
     // put the message and sender into firestore
@@ -266,6 +333,40 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
 
     @Override
     public void onClick(String locName) {
-        vote("001", locName);
+        vote(roomId, locName);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            // When back button is pressed in chat, go to appropriate screen based on where we came from
+            if (hangoutId != null && !hangoutId.isEmpty()) {
+                // If we came from a hangout, go back to hangout detail
+                Intent intent = new Intent(this, HangoutDetailActivity.class);
+                intent.putExtra("HANGOUT_ID", hangoutId);
+                startActivity(intent);
+            } else {
+                // Otherwise go to groups activity
+                startActivity(new Intent(this, GroupsActivity.class));
+            }
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Override back button behavior
+        if (hangoutId != null && !hangoutId.isEmpty()) {
+            // If we came from a hangout, go back to hangout detail
+            Intent intent = new Intent(this, HangoutDetailActivity.class);
+            intent.putExtra("HANGOUT_ID", hangoutId);
+            startActivity(intent);
+        } else {
+            // Otherwise go to groups activity
+            startActivity(new Intent(this, GroupsActivity.class));
+        }
+        finish();
     }
 }

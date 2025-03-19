@@ -2,57 +2,80 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:fitsSystemWindows="true">
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:title="Group Chat" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/voteRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="25dp"
-        android:layout_marginEnd="25dp"
-        app:layout_constraintBottom_toTopOf="@+id/addLocation"
+        android:padding="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/message_input_layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/voteRecyclerView"/>
+        app:layout_constraintTop_toBottomOf="@+id/voteRecyclerView" />
 
-    <Button
-        android:id="@+id/sendMessage"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/message_input_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="send"
+        android:orientation="horizontal"
+        android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <Button
-        android:id="@+id/addLocation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Add Location"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/msgInput" />
+        app:layout_constraintStart_toStartOf="parent">
 
-    <EditText
-        android:id="@+id/msgInput"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="Type Message or Location"
-        android:padding="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/sendMessage"
-        app:layout_constraintStart_toStartOf="parent" />
+        <EditText
+            android:id="@+id/msgInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Type a message"
+            android:inputType="text"
+            android:padding="12dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/voteRecyclerView"
-        android:layout_width="409dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="25dp"
-        android:layout_marginEnd="25dp"
-        android:overScrollMode="never"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/recyclerView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        <ImageButton
+            android:id="@+id/addLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Add location"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_mylocation" />
+
+        <ImageButton
+            android:id="@+id/sendMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Send message"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_send" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

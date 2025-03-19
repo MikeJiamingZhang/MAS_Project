@@ -52,6 +52,8 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

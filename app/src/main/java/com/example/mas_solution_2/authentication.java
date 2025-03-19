@@ -33,7 +33,8 @@ public class authentication extends AppCompatActivity {
         // If good password
         if(result.getResultCode() == RESULT_OK && user != null){
             Toast.makeText(this, "Sign-in successful!", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this, MainActivity.class);
+            // Changed to start GroupsActivity instead of MainActivity
+            Intent intent = new Intent(this, GroupsActivity.class);
             startActivity(intent);
             finish();
         }
@@ -58,6 +59,16 @@ public class authentication extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check if already logged in
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            // User already logged in, go directly to GroupsActivity
+            startActivity(new Intent(this, GroupsActivity.class));
+            finish();
+            return;
+        }
+
         //Toast.makeText(getApplicationContext(), "check", Toast.LENGTH_LONG).show();
         List<AuthUI.IdpConfig> providers = Arrays.asList(new AuthUI.IdpConfig.EmailBuilder().build());
         Intent signInIntent = AuthUI.getInstance()
@@ -65,7 +76,5 @@ public class authentication extends AppCompatActivity {
                 .setAvailableProviders(providers)
                 .build();
         signInLauncher.launch(signInIntent);
-
     }
-
 }
