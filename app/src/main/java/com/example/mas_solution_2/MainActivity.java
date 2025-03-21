@@ -272,6 +272,23 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         });
     }
 
+    // Remove location from database
+    public void removeLocation(String room, String location) {
+        CollectionReference voteLocation = firestore.collection("chatHistory").document(room).collection("votes");
+        voteLocation.whereEqualTo("location", location).get().addOnSuccessListener(querySnapshot -> {
+            if(querySnapshot.size() != 0) {
+                DocumentReference ref = querySnapshot.getDocuments().get(0).getReference(); // there should only be 1
+                ref.delete()
+                        .addOnSuccessListener(aVoid ->
+                                Toast.makeText(getApplicationContext(), "Location removed!", Toast.LENGTH_SHORT).show())
+                        .addOnFailureListener(e ->
+                                Toast.makeText(getApplicationContext(), "Failed to remove location!", Toast.LENGTH_SHORT).show());
+            } else {
+                Toast.makeText(getApplicationContext(), "Location not found", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     // Click the button to add a location to firefase if not in firestore already
     public void addLocation(String room, String location){
         CollectionReference voteLocation = firestore.collection("chatHistory").document(room).collection("votes");
@@ -334,6 +351,11 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     @Override
     public void onClick(String locName) {
         vote(roomId, locName);
+    }
+
+    @Override
+    public void onRemove(String locName) {
+        removeLocation(roomId, locName);
     }
 
     @Override
