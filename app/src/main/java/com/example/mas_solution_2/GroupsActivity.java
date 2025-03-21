@@ -187,13 +187,24 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
     }
 
     private void createGroup(String groupName, String joinCode) {
+        // Get current user info
+        String userId = currentUser.getUid();
+        String userEmail = currentUser.getEmail();
+
         Map<String, Object> groupData = new HashMap<>();
         groupData.put("name", groupName);
         groupData.put("joinCode", joinCode);
         groupData.put("imageUrl", "https://via.placeholder.com/150");
-        groupData.put("createdBy", currentUser.getUid());
-        groupData.put("members", new ArrayList<String>() {{ add(currentUser.getUid()); }});
+        groupData.put("createdBy", userId);
+        groupData.put("members", new ArrayList<String>() {{ add(userId); }});
         groupData.put("createdAt", FieldValue.serverTimestamp());
+
+        // Add a map to store member emails
+        Map<String, String> memberEmails = new HashMap<>();
+        if (userEmail != null && !userEmail.isEmpty()) {
+            memberEmails.put(userId, userEmail);
+        }
+        groupData.put("memberEmails", memberEmails);
 
         firestore.collection("groups")
                 .add(groupData)
@@ -220,8 +231,24 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
 
                     QueryDocumentSnapshot document = queryDocumentSnapshots.iterator().next();
 
-                    // Add the current user to the group's members list
-                    document.getReference().update("members", FieldValue.arrayUnion(currentUser.getUid()))
+                    // Get current user info
+                    String userId = currentUser.getUid();
+                    String userEmail = currentUser.getEmail();
+                    String displayName = currentUser.getDisplayName();
+
+                    // Updates to make to the group document
+                    Map<String, Object> updates = new HashMap<>();
+
+                    // Add user to members list
+                    updates.put("members", FieldValue.arrayUnion(userId));
+
+                    // Store user email in memberEmails map
+                    if (userEmail != null && !userEmail.isEmpty()) {
+                        updates.put("memberEmails." + userId, userEmail);
+                    }
+
+                    // Apply all updates
+                    document.getReference().update(updates)
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(this, "Successfully joined the group!", Toast.LENGTH_SHORT).show();
 

@@ -260,31 +260,97 @@ public class HangoutsActivity extends AppCompatActivity {
     private void fetchMemberNames(List<String> memberIds, GroupMemberAdapter adapter) {
         List<String> memberNames = new ArrayList<>();
 
-        // For each member ID, get the user's name
-        for (String memberId : memberIds) {
-            // If it's the current user, use their display name
-            if (memberId.equals(currentUser.getUid())) {
-                memberNames.add(currentUser.getDisplayName());
-                adapter.updateMembers(memberNames);
+        // Use the Firebase Auth instance to get the current user's info
+        String currentUserDisplayName = currentUser.getDisplayName();
+        String currentUserEmail = currentUser.getEmail();
+        String currentUserId = currentUser.getUid();
+
+        // For the current user, add their display name with "(You)"
+        for (int i = 0; i < memberIds.size(); i++) {
+            String memberId = memberIds.get(i);
+            if (memberId.equals(currentUserId)) {
+                memberNames.add(currentUserDisplayName + " (You)");
+            } else {
+                // For other users, default to showing "User" + userID prefix
+                // (We'll update these as we fetch emails)
+                memberNames.add("User " + memberId.substring(0, Math.min(6, memberId.length())));
+            }
+        }
+
+        // Initial update with placeholder names
+        adapter.updateMembers(memberNames);
+
+        // Get user emails from "users" collection where we store authentication info
+        for (int i = 0; i < memberIds.size(); i++) {
+            final int index = i;
+            String memberId = memberIds.get(i);
+
+            // Skip the current user since we already have their name
+            if (memberId.equals(currentUserId)) {
                 continue;
             }
 
-            // Otherwise, get the user's name from Firestore
+            // Try to look up this user in the "users" collection
             firestore.collection("users").document(memberId)
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
-                        String name = documentSnapshot.getString("displayName");
-                        if (name != null) {
-                            memberNames.add(name);
-                        } else {
-                            memberNames.add("User " + memberId.substring(0, 6));
+                        if (documentSnapshot.exists()) {
+                            // If we found the user, get their email
+                            String email = documentSnapshot.getString("email");
+                            if (email != null && !email.isEmpty()) {
+                                // Extract the username part from the email
+                                String username = email.split("@")[0];
+
+                                // Update the member name in our list
+                                memberNames.set(index, username);
+
+                                // Update the adapter with the new list
+                                adapter.updateMembers(memberNames);
+                            }
                         }
-                        adapter.updateMembers(memberNames);
-                    })
-                    .addOnFailureListener(e -> {
-                        // If we can't get the user's name, just use a placeholder
-                        memberNames.add("User " + memberId.substring(0, 6));
-                        adapter.updateMembers(memberNames);
+                    });
+
+            // Also check if we have this info stored in the group document
+            firestore.collection("groups").document(groupId)
+                    .get()
+                    .addOnSuccessListener(groupDocument -> {
+                        if (groupDocument.exists()) {
+                            // Check if memberEmails field exists
+                            Object memberEmailsObj = groupDocument.get("memberEmails");
+                            if (memberEmailsObj instanceof Map) {
+                                Map<String, String> memberEmails = (Map<String, String>) memberEmailsObj;
+                                String email = memberEmails.get(memberId);
+
+                                if (email != null && !email.isEmpty()) {
+                                    // Extract username part
+                                    String username = email.split("@")[0];
+
+                                    // Update the member name in our list
+                                    memberNames.set(index, username);
+
+                                    // Update the adapter
+                                    adapter.updateMembers(memberNames);
+                                }
+                            }
+
+                            // Store current user's email if we have one
+                            if (currentUserEmail != null && !currentUserEmail.isEmpty()) {
+                                Map<String, Object> updates = new HashMap<>();
+
+                                // Initialize memberEmails map if it doesn't exist
+                                if (!(groupDocument.get("memberEmails") instanceof Map)) {
+                                    Map<String, String> newMap = new HashMap<>();
+                                    newMap.put(currentUserId, currentUserEmail);
+                                    updates.put("memberEmails", newMap);
+                                } else {
+                                    // Just update the current user's entry
+                                    updates.put("memberEmails." + currentUserId, currentUserEmail);
+                                }
+
+                                // Update the document
+                                groupDocument.getReference().update(updates);
+                            }
+                        }
                     });
         }
     }
