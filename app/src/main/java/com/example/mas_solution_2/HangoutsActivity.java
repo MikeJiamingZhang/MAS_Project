@@ -3,6 +3,9 @@ package com.example.mas_solution_2;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +18,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -23,6 +27,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -32,6 +38,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -58,6 +65,7 @@ public class HangoutsActivity extends AppCompatActivity {
     private FirebaseUser currentUser;
     private List<Group> userGroups = new ArrayList<>();
     private HangoutsPagerAdapter pagerAdapter;
+    private ImageButton groupInfoButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +103,19 @@ public class HangoutsActivity extends AppCompatActivity {
                     } else {
                         getSupportActionBar().setTitle("All Hangouts");
                     }
+                }
+            }
+
+            // Setup Group Info button - only visible when viewing a specific group
+            groupInfoButton = findViewById(R.id.btn_group_info);
+            if (groupInfoButton != null) {
+                if (!groupId.isEmpty()) {
+                    groupInfoButton.setVisibility(View.VISIBLE);
+                    groupInfoButton.setOnClickListener(v -> {
+                        showGroupInfoDialog();
+                    });
+                } else {
+                    groupInfoButton.setVisibility(View.GONE);
                 }
             }
 
@@ -151,6 +172,120 @@ public class HangoutsActivity extends AppCompatActivity {
             Toast.makeText(this, "There was an error. Please try again.", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, GroupsActivity.class));
             finish();
+        }
+    }
+
+    private void showGroupInfoDialog() {
+        try {
+            // Only show dialog if we have a group ID
+            if (groupId.isEmpty()) {
+                Toast.makeText(this, "No group selected", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Create the dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_group_info, null);
+            builder.setView(dialogView);
+
+            // Get references to views
+            TextView groupNameView = dialogView.findViewById(R.id.group_name);
+            TextView joinCodeView = dialogView.findViewById(R.id.join_code);
+            TextView createdDateView = dialogView.findViewById(R.id.created_date);
+            RecyclerView membersListView = dialogView.findViewById(R.id.members_list);
+            Button copyCodeButton = dialogView.findViewById(R.id.btn_copy_code);
+            Button closeButton = dialogView.findViewById(R.id.btn_close);
+
+            // Set group name
+            groupNameView.setText(groupName);
+
+            // Initialize members adapter
+            List<String> members = new ArrayList<>();
+            GroupMemberAdapter membersAdapter = new GroupMemberAdapter(this, members);
+            membersListView.setLayoutManager(new LinearLayoutManager(this));
+            membersListView.setAdapter(membersAdapter);
+
+            // Create and show the dialog
+            AlertDialog dialog = builder.create();
+
+            // Fetch group details from Firestore
+            firestore.collection("groups").document(groupId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            // Get join code
+                            String joinCode = documentSnapshot.getString("joinCode");
+                            if (joinCode != null) {
+                                joinCodeView.setText(joinCode);
+                            }
+
+                            // Get creation date
+                            Timestamp createdAt = documentSnapshot.getTimestamp("createdAt");
+                            if (createdAt != null) {
+                                SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy", Locale.getDefault());
+                                createdDateView.setText(dateFormat.format(createdAt.toDate()));
+                            }
+
+                            // Get members
+                            List<String> memberIds = (List<String>) documentSnapshot.get("members");
+                            if (memberIds != null && !memberIds.isEmpty()) {
+                                fetchMemberNames(memberIds, membersAdapter);
+                            }
+
+                            // Set up copy button
+                            copyCodeButton.setOnClickListener(v -> {
+                                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                                ClipData clip = ClipData.newPlainText("Join Code", joinCode);
+                                clipboard.setPrimaryClip(clip);
+                                Toast.makeText(this, "Join code copied to clipboard", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error loading group info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    });
+
+            // Set up close button
+            closeButton.setOnClickListener(v -> dialog.dismiss());
+
+            dialog.show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing group info dialog: " + e.getMessage());
+            e.printStackTrace();
+            Toast.makeText(this, "Error showing group info", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void fetchMemberNames(List<String> memberIds, GroupMemberAdapter adapter) {
+        List<String> memberNames = new ArrayList<>();
+
+        // For each member ID, get the user's name
+        for (String memberId : memberIds) {
+            // If it's the current user, use their display name
+            if (memberId.equals(currentUser.getUid())) {
+                memberNames.add(currentUser.getDisplayName());
+                adapter.updateMembers(memberNames);
+                continue;
+            }
+
+            // Otherwise, get the user's name from Firestore
+            firestore.collection("users").document(memberId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        String name = documentSnapshot.getString("displayName");
+                        if (name != null) {
+                            memberNames.add(name);
+                        } else {
+                            memberNames.add("User " + memberId.substring(0, 6));
+                        }
+                        adapter.updateMembers(memberNames);
+                    })
+                    .addOnFailureListener(e -> {
+                        // If we can't get the user's name, just use a placeholder
+                        memberNames.add("User " + memberId.substring(0, 6));
+                        adapter.updateMembers(memberNames);
+                    });
         }
     }
 

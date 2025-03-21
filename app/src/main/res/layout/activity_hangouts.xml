@@ -26,6 +26,17 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/btn_group_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Group information"
+                android:src="@android:drawable/ic_menu_info_details"
+                android:tint="@color/white"
+                android:visibility="gone" />
+
+            <ImageButton
                 android:id="@+id/btn_create_hangout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
