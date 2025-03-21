@@ -2,4 +2,21 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- New modern color scheme -->
+    <color name="primary">#1976D2</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="primary_light">#BBDEFB</color>
+    <color name="accent">#03A9F4</color>
+    <color name="accent_light">#B3E5FC</color>
+    <color name="background">#F3E5F5</color>
+
+    <!-- Button colors -->
+    <color name="button_green">#4CAF50</color>
+    <color name="button_red">#F44336</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_light">#FFFFFF</color>
 </resources>

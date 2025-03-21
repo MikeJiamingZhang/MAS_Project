@@ -1,9 +1,17 @@
 package com.example.mas_solution_2;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,11 +23,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class GroupsActivity extends AppCompatActivity implements GroupAdapter.GroupClickListener {
 
@@ -52,14 +64,7 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
         // Set up buttons
         ImageButton createGroupButton = findViewById(R.id.btn_create_group);
         createGroupButton.setOnClickListener(v -> {
-            // TODO: Implement group creation
-            Toast.makeText(this, "Create group feature coming soon!", Toast.LENGTH_SHORT).show();
-        });
-
-        ImageButton nightModeButton = findViewById(R.id.btn_night_mode);
-        nightModeButton.setOnClickListener(v -> {
-            // TODO: Implement night mode toggle
-            Toast.makeText(this, "Night mode feature coming soon!", Toast.LENGTH_SHORT).show();
+            showCreateGroupDialog();
         });
 
         // Set up RecyclerView
@@ -77,6 +82,7 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
                 // Already on home page
                 return true;
             } else if (itemId == R.id.nav_calendar) {
+                // Navigate directly to the hangouts page without requiring group selection
                 startActivity(new Intent(this, HangoutsActivity.class));
                 return true;
             } else if (itemId == R.id.nav_profile) {
@@ -94,13 +100,150 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
         loadGroups();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_groups, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_join_group) {
+            showJoinGroupDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showCreateGroupDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_group, null);
+        builder.setView(dialogView);
+
+        EditText groupNameEditText = dialogView.findViewById(R.id.edit_group_name);
+        TextView joinCodeTextView = dialogView.findViewById(R.id.text_join_code);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button createButton = dialogView.findViewById(R.id.button_create);
+
+        // Generate a random 6-character join code
+        String joinCode = generateJoinCode();
+        joinCodeTextView.setText("Join Code: " + joinCode);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        createButton.setOnClickListener(v -> {
+            String groupName = groupNameEditText.getText().toString().trim();
+
+            if (groupName.isEmpty()) {
+                groupNameEditText.setError("Please enter a group name");
+                return;
+            }
+
+            createGroup(groupName, joinCode);
+            dialog.dismiss();
+        });
+    }
+
+    private void showJoinGroupDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_join_group, null);
+        builder.setView(dialogView);
+
+        EditText joinCodeEditText = dialogView.findViewById(R.id.edit_join_code);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button joinButton = dialogView.findViewById(R.id.button_join);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        joinButton.setOnClickListener(v -> {
+            String joinCode = joinCodeEditText.getText().toString().trim();
+
+            if (joinCode.isEmpty()) {
+                joinCodeEditText.setError("Please enter a join code");
+                return;
+            }
+
+            joinGroup(joinCode);
+            dialog.dismiss();
+        });
+    }
+
+    private String generateJoinCode() {
+        String ALLOWED_CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        Random random = new Random();
+        StringBuilder builder = new StringBuilder(6);
+
+        for (int i = 0; i < 6; i++) {
+            builder.append(ALLOWED_CHARACTERS.charAt(random.nextInt(ALLOWED_CHARACTERS.length())));
+        }
+
+        return builder.toString();
+    }
+
+    private void createGroup(String groupName, String joinCode) {
+        Map<String, Object> groupData = new HashMap<>();
+        groupData.put("name", groupName);
+        groupData.put("joinCode", joinCode);
+        groupData.put("imageUrl", "https://via.placeholder.com/150");
+        groupData.put("createdBy", currentUser.getUid());
+        groupData.put("members", new ArrayList<String>() {{ add(currentUser.getUid()); }});
+        groupData.put("createdAt", FieldValue.serverTimestamp());
+
+        firestore.collection("groups")
+                .add(groupData)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Group created successfully!", Toast.LENGTH_SHORT).show();
+
+                    // Refresh the group list
+                    loadGroups();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error creating group: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void joinGroup(String joinCode) {
+        firestore.collection("groups")
+                .whereEqualTo("joinCode", joinCode)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        Toast.makeText(this, "Invalid join code", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    QueryDocumentSnapshot document = queryDocumentSnapshots.iterator().next();
+
+                    // Add the current user to the group's members list
+                    document.getReference().update("members", FieldValue.arrayUnion(currentUser.getUid()))
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Successfully joined the group!", Toast.LENGTH_SHORT).show();
+
+                                // Refresh the group list
+                                loadGroups();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error joining group: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error finding group: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void loadGroups() {
         // For demo purposes, add some example groups
         if (groupList.isEmpty()) {
             addDemoGroups();
         }
 
-        // TODO: Load groups from Firestore
+        // Load groups from Firestore
         firestore.collection("groups")
                 .whereArrayContains("members", currentUser.getUid())
                 .get()
@@ -146,10 +289,23 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
 
     @Override
     public void onLeaveClick(Group group) {
-        // Show confirmation dialog
-        Toast.makeText(this, "Are you sure you want to leave " + group.getName() + "?", Toast.LENGTH_SHORT).show();
-
-        // TODO: Implement leave group functionality with Firestore
+        new AlertDialog.Builder(this)
+                .setTitle("Leave Group")
+                .setMessage("Are you sure you want to leave " + group.getName() + "?")
+                .setPositiveButton("Leave", (dialog, which) -> {
+                    // Remove user from group members
+                    firestore.collection("groups").document(group.getId())
+                            .update("members", FieldValue.arrayRemove(currentUser.getUid()))
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Left group successfully", Toast.LENGTH_SHORT).show();
+                                loadGroups(); // Refresh the list
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error leaving group: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
