@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String groupId;
     private String roomId = "001"; // Default room
     private String groupName;
+    private boolean sendingLocation = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,9 +124,17 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             @Override
             public void onClick(View v) {
                 String text = msgInput.getText().toString();
-                if(!text.equals("")){
-                    sendMessage(roomId, FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
-                    msgInput.setText("");
+                if(!sendingLocation){
+                    if(!text.equals("")){
+                        sendMessage(roomId, FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
+                        msgInput.setText("");
+                    }
+                }
+                else{
+                    if(!text.equals("")){
+                        addLocation(roomId, text);
+                        msgInput.setText("");
+                    }
                 }
             }
         });
@@ -134,10 +143,14 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         addLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String text = msgInput.getText().toString();
-                if(!text.equals("")){
-                    addLocation(roomId, text);
-                    msgInput.setText("");
+                if(sendingLocation){
+                    sendingLocation = false;
+                    msgInput.setHint("Send a Message");
+                    Toast.makeText(getApplicationContext(), "Sending Messages via Input", Toast.LENGTH_SHORT).show();
+                } else{
+                    sendingLocation = true;
+                    msgInput.setHint("Add a Location");
+                    Toast.makeText(getApplicationContext(), "Adding Locations via Input", Toast.LENGTH_SHORT).show();
                 }
             }
         });
