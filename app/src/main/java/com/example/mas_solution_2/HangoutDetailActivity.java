@@ -140,6 +140,13 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
         loadHangout();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshWhenReturned();
+
+    }
+
     private void loadHangout() {
         // For demo purposes
         if (hangoutId.equals("4")) {
@@ -252,17 +259,21 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
             // Handle the "add photo" action
 
         } else {
-            // TODO: Show full-screen photo viewer
-            Toast.makeText(this, "Photo viewer coming soon!", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "Photo viewer coming soon!", Toast.LENGTH_SHORT).show();
+            // start a new intent of a enlarged photoViewer
+            Intent intent = new Intent(this, photoViewer.class);
+            intent.putExtra("URL", photoUrl);
+            intent.putExtra("HANGOUT_ID", hangoutId);
+            startActivity(intent);
         }
     }
 
-    public void addPhoto(){
+    public void addPhoto() {
         // check permission
-        if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1001);
             return;
-        }else{
+        } else {
             //Toast.makeText(getApplicationContext(), "got permission", Toast.LENGTH_LONG).show();
             Intent intent = new Intent();
             intent.setType("image/*"); // images only
@@ -275,7 +286,7 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
     // The file that actually ads photo to firebase
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 1002 && resultCode == RESULT_OK && data != null){
+        if (requestCode == 1002 && resultCode == RESULT_OK && data != null) {
             Uri imageuri = data.getData();
             String fileName = String.valueOf(System.currentTimeMillis());
             StorageReference storageRef = FirebaseStorage.getInstance().getReference("hangout_photos/" + hangoutId + "/" + fileName);
@@ -291,5 +302,18 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
                                         });
                             }));
         }
+    }
+
+    // Re-fetch photoList from firestore
+    private void refreshWhenReturned() {
+        firestore.collection("hangouts").document(hangoutId).get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                if (documentSnapshot.toObject(Hangout.class) != null && documentSnapshot.toObject(Hangout.class).getPhotoUrls() != null) {
+                    photoList.clear();
+                    photoList.addAll(documentSnapshot.toObject(Hangout.class).getPhotoUrls());
+                    photoAdapter.notifyDataSetChanged();
+                }
+            }
+        });
     }
 }
