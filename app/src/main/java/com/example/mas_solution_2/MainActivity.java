@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
 
 import android.view.MenuItem;
 import android.view.View;
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String roomId = "001"; // Default room
     private String groupName;
     private boolean sendingLocation = false;
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

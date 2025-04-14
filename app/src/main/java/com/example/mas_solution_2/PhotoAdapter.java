@@ -50,14 +50,11 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHol
                 holder.imageView.setBackgroundResource(android.R.color.darker_gray);
                 */
                 // Putting a placeholder for the image
-                holder.imageView.setImageResource(R.drawable.placeholder);
-                holder.imageView.setBackgroundResource(android.R.color.darker_gray);
 
             } else {
                 Glide.with(context)
                         .load(photoUrl)
                         .apply(new RequestOptions().centerCrop())
-                        .placeholder(R.drawable.ic_launcher_background)
                         .error(R.drawable.ic_launcher_background)
                         .into(holder.imageView);
             }
