@@ -45,13 +45,16 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHol
         if (photoUrl != null && !photoUrl.isEmpty()) {
             if (photoUrl.equals("add")) {
                 // Special case for the "Add Photo" button
+                /*
                 holder.imageView.setImageResource(R.drawable.ic_launcher_foreground);
                 holder.imageView.setBackgroundResource(android.R.color.darker_gray);
+                */
+                // Putting a placeholder for the image
+
             } else {
                 Glide.with(context)
                         .load(photoUrl)
                         .apply(new RequestOptions().centerCrop())
-                        .placeholder(R.drawable.ic_launcher_background)
                         .error(R.drawable.ic_launcher_background)
                         .into(holder.imageView);
             }

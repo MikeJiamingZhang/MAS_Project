@@ -2,8 +2,33 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.MAS_solution_2" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:windowBackground">@color/background</item>
+
+        <!-- Tab styling -->
+        <item name="tabStyle">@style/CustomTabLayout</item>
+
+        <!-- Button styling -->
+        <item name="buttonStyle">@style/CustomButton</item>
     </style>
 
     <style name="Theme.MAS_solution_2" parent="Base.Theme.MAS_solution_2" />
+
+    <!-- Custom styles for tabs -->
+    <style name="CustomTabLayout" parent="Widget.Material3.TabLayout">
+        <item name="tabTextColor">@color/primary_light</item>
+        <item name="tabSelectedTextColor">@color/white</item>
+        <item name="tabIndicatorColor">@color/white</item>
+        <item name="tabBackground">@color/primary</item>
+    </style>
+
+    <!-- Custom button style with rounded corners -->
+    <style name="CustomButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">24dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
 </resources>

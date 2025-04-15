@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
 
 import android.view.MenuItem;
 import android.view.View;
@@ -67,6 +68,8 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String groupId;
     private String roomId = "001"; // Default room
     private String groupName;
+    private boolean sendingLocation = false;
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,9 +126,17 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             @Override
             public void onClick(View v) {
                 String text = msgInput.getText().toString();
-                if(!text.equals("")){
-                    sendMessage(roomId, FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
-                    msgInput.setText("");
+                if(!sendingLocation){
+                    if(!text.equals("")){
+                        sendMessage(roomId, FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), text);
+                        msgInput.setText("");
+                    }
+                }
+                else{
+                    if(!text.equals("")){
+                        addLocation(roomId, text);
+                        msgInput.setText("");
+                    }
                 }
             }
         });
@@ -134,10 +145,14 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         addLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String text = msgInput.getText().toString();
-                if(!text.equals("")){
-                    addLocation(roomId, text);
-                    msgInput.setText("");
+                if(sendingLocation){
+                    sendingLocation = false;
+                    msgInput.setHint("Send a Message");
+                    Toast.makeText(getApplicationContext(), "Sending Messages via Input", Toast.LENGTH_SHORT).show();
+                } else{
+                    sendingLocation = true;
+                    msgInput.setHint("Add a Location");
+                    Toast.makeText(getApplicationContext(), "Adding Locations via Input", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -272,6 +287,23 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         });
     }
 
+    // Remove location from database
+    public void removeLocation(String room, String location) {
+        CollectionReference voteLocation = firestore.collection("chatHistory").document(room).collection("votes");
+        voteLocation.whereEqualTo("location", location).get().addOnSuccessListener(querySnapshot -> {
+            if(querySnapshot.size() != 0) {
+                DocumentReference ref = querySnapshot.getDocuments().get(0).getReference(); // there should only be 1
+                ref.delete()
+                        .addOnSuccessListener(aVoid ->
+                                Toast.makeText(getApplicationContext(), "Location removed!", Toast.LENGTH_SHORT).show())
+                        .addOnFailureListener(e ->
+                                Toast.makeText(getApplicationContext(), "Failed to remove location!", Toast.LENGTH_SHORT).show());
+            } else {
+                Toast.makeText(getApplicationContext(), "Location not found", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     // Click the button to add a location to firefase if not in firestore already
     public void addLocation(String room, String location){
         CollectionReference voteLocation = firestore.collection("chatHistory").document(room).collection("votes");
@@ -334,6 +366,11 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     @Override
     public void onClick(String locName) {
         vote(roomId, locName);
+    }
+
+    @Override
+    public void onRemove(String locName) {
+        removeLocation(roomId, locName);
     }
 
     @Override

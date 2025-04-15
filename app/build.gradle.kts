@@ -44,8 +44,9 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth") //authentication
+    implementation("com.google.firebase:firebase-firestore") // firestore for data
+    implementation("com.google.firebase:firebase-storage") // firebase storage for photos
     implementation("com.firebaseui:firebase-ui-auth:7.2.0")
     implementation("androidx.activity:activity-compose:1.8.0'")
     implementation("androidx.compose.material3:material3:1.1.2")

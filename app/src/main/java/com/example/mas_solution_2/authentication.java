@@ -20,7 +20,9 @@ import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,10 +35,38 @@ public class authentication extends AppCompatActivity {
         // If good password
         if(result.getResultCode() == RESULT_OK && user != null){
             Toast.makeText(this, "Sign-in successful!", Toast.LENGTH_SHORT).show();
-            // Changed to start GroupsActivity instead of MainActivity
-            Intent intent = new Intent(this, GroupsActivity.class);
-            startActivity(intent);
-            finish();
+
+            // Store user information in Firestore
+            String userId = user.getUid();
+            String userEmail = user.getEmail();
+            String displayName = user.getDisplayName();
+
+            if (userEmail != null && !userEmail.isEmpty()) {
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("email", userEmail);
+                userData.put("displayName", displayName);
+
+                // Save to Firestore
+                FirebaseFirestore.getInstance().collection("users").document(userId)
+                        .set(userData)
+                        .addOnSuccessListener(aVoid -> {
+                            // Continue to GroupsActivity after saving user data
+                            Intent intent = new Intent(this, GroupsActivity.class);
+                            startActivity(intent);
+                            finish();
+                        })
+                        .addOnFailureListener(e -> {
+                            // Even if saving fails, continue to GroupsActivity
+                            Intent intent = new Intent(this, GroupsActivity.class);
+                            startActivity(intent);
+                            finish();
+                        });
+            } else {
+                // If no email, just continue to GroupsActivity
+                Intent intent = new Intent(this, GroupsActivity.class);
+                startActivity(intent);
+                finish();
+            }
         }
         else{
             // Putout a text

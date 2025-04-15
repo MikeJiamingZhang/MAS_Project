@@ -1,6 +1,7 @@
 package com.example.mas_solution_2;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,10 +10,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
@@ -82,7 +85,8 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
             // Determine if this is a voting event or a confirmed event
             if (hangout.getLocation().contains("vote") || hangout.getName().contains("vote")) {
                 holder.actionButton.setText("Vote");
-                holder.actionButton.setBackgroundResource(android.R.color.holo_green_light);
+                holder.actionButton.setBackgroundTintList(ColorStateList.valueOf(
+                        ContextCompat.getColor(context, R.color.button_green)));
                 holder.actionButton.setOnClickListener(v -> {
                     if (clickListener != null) {
                         clickListener.onVoteClick(hangout);
@@ -90,7 +94,8 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
                 });
             } else {
                 holder.actionButton.setText("Cancel");
-                holder.actionButton.setBackgroundResource(android.R.color.holo_red_light);
+                holder.actionButton.setBackgroundTintList(ColorStateList.valueOf(
+                        ContextCompat.getColor(context, R.color.button_red)));
                 holder.actionButton.setOnClickListener(v -> {
                     if (clickListener != null) {
                         clickListener.onCancelClick(hangout);
@@ -124,7 +129,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         TextView nameTextView;
         TextView dateTextView;
         TextView locationTextView;
-        Button actionButton;
+        MaterialButton actionButton;
 
         public HangoutViewHolder(@NonNull View itemView) {
             super(itemView);

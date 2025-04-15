@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -11,12 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-
 // adapter for the voting section
 // Horizontally scroll to the right
 // Very similar to the chatAdapter
 // Vote adapter reference: https://www.youtube.com/watch?v=vBxNDtyE_Co&t=0s
-public class voteAdapter extends  RecyclerView.Adapter<voteAdapter.MyViewHolder>{
+public class voteAdapter extends RecyclerView.Adapter<voteAdapter.MyViewHolder>{
 
     private List<voteItem> voteList;
     private voteListener listener;
@@ -30,16 +30,26 @@ public class voteAdapter extends  RecyclerView.Adapter<voteAdapter.MyViewHolder>
         private TextView voteView;
         private TextView locationView;
         private Button vote;
+        private ImageButton btnRemove;
 
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
             voteView = itemView.findViewById(R.id.voteCount);
             locationView = itemView.findViewById(R.id.location);
             vote = itemView.findViewById(R.id.vote);
+            btnRemove = itemView.findViewById(R.id.btnRemove);
+
             vote.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     listener.onClick(voteList.get(getAdapterPosition()).getLocation());
+                }
+            });
+
+            btnRemove.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    listener.onRemove(voteList.get(getAdapterPosition()).getLocation());
                 }
             });
         }
@@ -57,7 +67,6 @@ public class voteAdapter extends  RecyclerView.Adapter<voteAdapter.MyViewHolder>
         voteItem item = voteList.get(position);
         holder.locationView.setText(item.getLocation());
         holder.voteView.setText("Votes: " + item.getVote());
-
     }
 
     @Override
@@ -73,5 +82,6 @@ public class voteAdapter extends  RecyclerView.Adapter<voteAdapter.MyViewHolder>
 
     public interface voteListener{
         void onClick(String locName);
+        void onRemove(String locName);
     }
 }

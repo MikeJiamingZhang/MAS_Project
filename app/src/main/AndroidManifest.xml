@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
         android:name=".CommunityPlannerApp"
         android:allowBackup="true"
@@ -43,6 +45,12 @@
             android:name=".MainActivity"
             android:exported="false"
             android:theme="@style/Theme.MAS_solution_2" />
+
+        <activity
+            android:name=".photoViewer"
+            android:exported="false"
+            android:theme="@style/Theme.MAS_solution_2"/>
+
 
     </application>
 

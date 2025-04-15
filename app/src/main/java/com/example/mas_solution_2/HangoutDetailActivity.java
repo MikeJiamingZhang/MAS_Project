@@ -1,6 +1,8 @@
 package com.example.mas_solution_2;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -22,13 +24,17 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class HangoutDetailActivity extends AppCompatActivity implements PhotoAdapter.PhotoClickListener {
 
@@ -98,8 +104,8 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
         // Add photos button click handler
         Button addPhotoButton = findViewById(R.id.btn_add_photo);
         addPhotoButton.setOnClickListener(v -> {
-            // TODO: Implement photo upload
-            Toast.makeText(this, "Photo upload feature coming soon!", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this, "Photo upload feature coming soon!", Toast.LENGTH_SHORT).show();
+            addPhoto();
         });
 
         // Group chat button click handler
@@ -134,6 +140,13 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
         loadHangout();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshWhenReturned();
+
+    }
+
     private void loadHangout() {
         // For demo purposes
         if (hangoutId.equals("4")) {
@@ -153,12 +166,7 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
             hangout.addParticipant("user4");
             hangout.addParticipant("user5");
 
-            // Demo photos
-            photoList.add("add"); // Special case for "add photo" button
-            photoList.add("https://via.placeholder.com/150/FFFF00/000000?text=Pool+1");
-            photoList.add("https://via.placeholder.com/150/FF0000/FFFFFF?text=Pool+2");
-            photoList.add("https://via.placeholder.com/150/0000FF/FFFFFF?text=Pool+3");
-            photoAdapter.notifyDataSetChanged();
+            // Demo photos deleted
 
             updateUI();
             return;
@@ -175,12 +183,10 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
                         // Load photos if any
                         if (hangout.getPhotoUrls() != null && !hangout.getPhotoUrls().isEmpty()) {
                             photoList.clear();
-                            photoList.add("add"); // Special case for "add photo" button
                             photoList.addAll(hangout.getPhotoUrls());
                             photoAdapter.notifyDataSetChanged();
                         } else {
                             photoList.clear();
-                            photoList.add("add"); // Special case for "add photo" button
                             photoAdapter.notifyDataSetChanged();
                         }
 
@@ -251,10 +257,63 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
     public void onPhotoClick(String photoUrl, int position) {
         if (position == 0 && photoUrl.equals("add")) {
             // Handle the "add photo" action
-            Toast.makeText(this, "Add photo feature coming soon!", Toast.LENGTH_SHORT).show();
+
         } else {
-            // TODO: Show full-screen photo viewer
-            Toast.makeText(this, "Photo viewer coming soon!", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "Photo viewer coming soon!", Toast.LENGTH_SHORT).show();
+            // start a new intent of a enlarged photoViewer
+            Intent intent = new Intent(this, photoViewer.class);
+            intent.putExtra("URL", photoUrl);
+            intent.putExtra("HANGOUT_ID", hangoutId);
+            startActivity(intent);
         }
+    }
+
+    public void addPhoto() {
+        // check permission
+        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1001);
+            return;
+        } else {
+            //Toast.makeText(getApplicationContext(), "got permission", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent();
+            intent.setType("image/*"); // images only
+            intent.setAction(Intent.ACTION_GET_CONTENT); // get stuff from storage
+            startActivityForResult(Intent.createChooser(intent, "Select a Picture!"), 1002);
+        }
+    }
+
+    @Override
+    // The file that actually ads photo to firebase
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1002 && resultCode == RESULT_OK && data != null) {
+            Uri imageuri = data.getData();
+            String fileName = String.valueOf(System.currentTimeMillis());
+            StorageReference storageRef = FirebaseStorage.getInstance().getReference("hangout_photos/" + hangoutId + "/" + fileName);
+            // we put file into the storage. Step after step, in case of race condition
+            storageRef.putFile(imageuri)
+                    .addOnSuccessListener(getURL ->
+                            storageRef.getDownloadUrl().addOnSuccessListener(uri -> { // get url of it
+                                firestore.collection("hangouts").document(hangoutId)
+                                        .update("photoUrls", FieldValue.arrayUnion(uri.toString()))
+                                        .addOnSuccessListener(putUrl -> {
+                                            photoList.add(uri.toString()); // put the url of the storage file into firestore under the hangouts
+                                            photoAdapter.notifyDataSetChanged(); // update the recyclerView
+                                        });
+                            }));
+        }
+    }
+
+    // Re-fetch photoList from firestore
+    private void refreshWhenReturned() {
+        firestore.collection("hangouts").document(hangoutId).get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                if (documentSnapshot.toObject(Hangout.class) != null && documentSnapshot.toObject(Hangout.class).getPhotoUrls() != null) {
+                    photoList.clear();
+                    photoList.addAll(documentSnapshot.toObject(Hangout.class).getPhotoUrls());
+                    photoAdapter.notifyDataSetChanged();
+                }
+            }
+        });
     }
 }
