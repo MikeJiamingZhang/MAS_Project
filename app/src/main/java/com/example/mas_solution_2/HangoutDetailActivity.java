@@ -149,6 +149,7 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
 
     private void loadHangout() {
         // For demo purposes
+        /*
         if (hangoutId.equals("4")) {
             // Pool party demo
             Date pastDate = new Date(System.currentTimeMillis() - 86400000); // Yesterday
@@ -166,12 +167,10 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
             hangout.addParticipant("user4");
             hangout.addParticipant("user5");
 
-            // Demo photos deleted
-
             updateUI();
             return;
         }
-
+        */
         // TODO: Load real hangout from Firestore
         firestore.collection("hangouts").document(hangoutId)
                 .get()
@@ -294,13 +293,12 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
             storageRef.putFile(imageuri)
                     .addOnSuccessListener(getURL ->
                             storageRef.getDownloadUrl().addOnSuccessListener(uri -> { // get url of it
-                                firestore.collection("hangouts").document(hangoutId)
-                                        .update("photoUrls", FieldValue.arrayUnion(uri.toString()))
-                                        .addOnSuccessListener(putUrl -> {
+                                firestore.collection("hangouts").document(hangoutId).update("photoUrls", FieldValue.arrayUnion(uri.toString())).addOnSuccessListener(putUrl -> {
                                             photoList.add(uri.toString()); // put the url of the storage file into firestore under the hangouts
                                             photoAdapter.notifyDataSetChanged(); // update the recyclerView
-                                        });
-                            }));
+                                });
+                            })
+                    );
         }
     }
 
