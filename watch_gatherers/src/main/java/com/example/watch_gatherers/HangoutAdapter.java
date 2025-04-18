@@ -12,17 +12,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 
 public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutViewHolder> {
 
     private Context context;
     private List<Hangout> hangouts;
     private boolean showGroupName;
-    private Map<String, String> groupIdToName;
+    private Map<String, String> groupIdToName = new HashMap<>();
 
     public HangoutAdapter(Context context, List<Hangout> hangouts) {
         this(context, hangouts, false);
@@ -32,12 +32,12 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         this.context = context;
         this.hangouts = hangouts;
         this.showGroupName = showGroupName;
+    }
 
-        // Initialize group name lookup
-        this.groupIdToName = new HashMap<>();
-        groupIdToName.put("1", "Family");
-        groupIdToName.put("2", "College Friends");
-        groupIdToName.put("3", "Work Colleagues");
+    // Add this method to fix the error
+    public void setGroupIdToName(Map<String, String> groupIdToName) {
+        this.groupIdToName = groupIdToName;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -53,8 +53,12 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
 
         // Set name (with group name if showing all)
         if (showGroupName && hangout.getGroupId() != null) {
-            String groupName = groupIdToName.getOrDefault(hangout.getGroupId(), "");
-            holder.nameTextView.setText(hangout.getName() + " (" + groupName + ")");
+            String groupName = groupIdToName.get(hangout.getGroupId());
+            if (groupName != null && !groupName.isEmpty()) {
+                holder.nameTextView.setText(hangout.getName() + " (" + groupName + ")");
+            } else {
+                holder.nameTextView.setText(hangout.getName());
+            }
         } else {
             holder.nameTextView.setText(hangout.getName());
         }

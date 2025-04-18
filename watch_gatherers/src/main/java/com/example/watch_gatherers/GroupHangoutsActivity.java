@@ -2,22 +2,25 @@ package com.example.watch_gatherers;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 
-import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 public class GroupHangoutsActivity extends Activity {
 
+    private static final String TAG = "GroupHangoutsActivity";
     private String groupId;
     private String groupName;
 
@@ -28,6 +31,8 @@ public class GroupHangoutsActivity extends Activity {
 
     private List<Hangout> hangouts = new ArrayList<>();
     private HangoutAdapter adapter;
+
+    private FirebaseFirestore firestore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,9 +47,13 @@ public class GroupHangoutsActivity extends Activity {
         }
 
         if (groupId.isEmpty()) {
+            Toast.makeText(this, "Group ID not found", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
+        // Initialize Firebase
+        firestore = FirebaseFirestore.getInstance();
 
         // Initialize views
         titleView = findViewById(R.id.title);
@@ -67,114 +76,54 @@ public class GroupHangoutsActivity extends Activity {
         recyclerView.setAdapter(adapter);
 
         // Load hangouts
-        loadMockHangouts();
+        loadHangouts();
     }
 
-    private void loadMockHangouts() {
+    private void loadHangouts() {
         progressBar.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.GONE);
         emptyView.setVisibility(View.GONE);
 
-        // Simulate network delay
-        recyclerView.postDelayed(() -> {
-            progressBar.setVisibility(View.GONE);
+        // Get all hangouts for this group without date filtering
+        firestore.collection("hangouts")
+                .whereEqualTo("groupId", groupId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    progressBar.setVisibility(View.GONE);
 
-            // Create mock data based on group ID
-            hangouts.clear();
+                    hangouts.clear();
+                    Date now = new Date();
 
-            // Family group (ID: 1)
-            if ("1".equals(groupId)) {
-                Calendar cal = Calendar.getInstance();
+                    // Filter and sort in your code
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Hangout hangout = document.toObject(Hangout.class);
+                        hangout.setId(document.getId());
 
-                // Future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 3);
-                hangouts.add(new Hangout(
-                        "101",
-                        "Family Dinner",
-                        "Mom's House",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
+                        // Only add upcoming hangouts
+                        if (hangout.getDate() != null && hangout.getDate().toDate().after(now)) {
+                            hangouts.add(hangout);
+                        }
+                    }
 
-                // Another future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 7);
-                hangouts.add(new Hangout(
-                        "102",
-                        "Weekend Getaway",
-                        "Mountain Cabin",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
-            }
-            // College Friends group (ID: 2)
-            else if ("2".equals(groupId)) {
-                Calendar cal = Calendar.getInstance();
+                    // Sort by date
+                    hangouts.sort((h1, h2) -> h1.getDate().compareTo(h2.getDate()));
 
-                // Future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 1);
-                hangouts.add(new Hangout(
-                        "201",
-                        "Game Night",
-                        "Jake's Apartment",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
+                    adapter.notifyDataSetChanged();
 
-                // Another future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 5);
-                hangouts.add(new Hangout(
-                        "202",
-                        "Beach Day",
-                        "Venice Beach",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
-
-                // One more hangout
-                cal.add(Calendar.DAY_OF_MONTH, 14);
-                hangouts.add(new Hangout(
-                        "203",
-                        "Reunion Party",
-                        "Downtown Lounge",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
-            }
-            // Work Colleagues group (ID: 3)
-            else if ("3".equals(groupId)) {
-                Calendar cal = Calendar.getInstance();
-
-                // Future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 2);
-                hangouts.add(new Hangout(
-                        "301",
-                        "Team Lunch",
-                        "Italian Restaurant",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
-
-                // Another future hangout
-                cal.add(Calendar.DAY_OF_MONTH, 10);
-                hangouts.add(new Hangout(
-                        "302",
-                        "Quarterly Celebration",
-                        "Company HQ",
-                        new Timestamp(cal.getTime()),
-                        groupId
-                ));
-            }
-
-            adapter.notifyDataSetChanged();
-
-            if (hangouts.isEmpty()) {
-                recyclerView.setVisibility(View.GONE);
-                emptyView.setText("No upcoming hangouts");
-                emptyView.setVisibility(View.VISIBLE);
-            } else {
-                recyclerView.setVisibility(View.VISIBLE);
-                emptyView.setVisibility(View.GONE);
-            }
-        }, 1000); // 1-second delay to simulate loading
+                    if (hangouts.isEmpty()) {
+                        recyclerView.setVisibility(View.GONE);
+                        emptyView.setText("No upcoming hangouts for this group");
+                        emptyView.setVisibility(View.VISIBLE);
+                    } else {
+                        recyclerView.setVisibility(View.VISIBLE);
+                        emptyView.setVisibility(View.GONE);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading hangouts", e);
+                    progressBar.setVisibility(View.GONE);
+                    emptyView.setText("Error loading hangouts: " + e.getMessage());
+                    emptyView.setVisibility(View.VISIBLE);
+                });
     }
 }
