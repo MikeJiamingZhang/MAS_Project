@@ -1,5 +1,6 @@
 package com.example.mas_solution_2;
 
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -29,8 +30,10 @@ import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 // Firestore structure
@@ -70,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String groupName;
     private boolean sendingLocation = false;
     private String me = FirebaseAuth.getInstance().getUid();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -449,10 +454,28 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
         View dialogView = getLayoutInflater().inflate(R.layout.activity_hangoutpopup, null);
         EditText nameInput = dialogView.findViewById(R.id.hangout_name);
         DatePicker datePicker = dialogView.findViewById(R.id.date_picker);
+        TextView setHangoutTime = dialogView.findViewById(R.id.editTextTime);
+        Calendar calendar = Calendar.getInstance();
+        setHangoutTime.setOnClickListener(v -> {
+            TimePickerDialog timePickerDialog = new TimePickerDialog(
+                    this,
+                    (view, hourOfDay, minute) -> {
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        calendar.set(Calendar.MINUTE, minute);
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
+                        setHangoutTime.setText(timeFormat.format(calendar.getTime()));
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    false
+            );
+            timePickerDialog.show();
+        });
         // Finally show the dialog
         new AlertDialog.Builder(this).setTitle("Create Hangout!").setMessage("Everyone has voted! Let's finalize your hangout at: " + topLocation).setView(dialogView).setPositiveButton("Create", (dialog, which) -> {
             String name = nameInput.getText().toString().trim();
-            Calendar calendar = Calendar.getInstance();
+            //Calendar calendar = Calendar.getInstance();
+            //String hourAndMinute = setHangoutTime.getText();
             calendar.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
             createFinalizedHangout(name, topLocation, calendar.getTime()); // Actually create the entry
         }).setNegativeButton("Cancel", null).show();
