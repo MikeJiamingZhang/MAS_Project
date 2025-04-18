@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+//    alias(libs.plugins.kotlin.android)  // Add this line
     id("com.google.gms.google-services")
 }
 
@@ -13,7 +14,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -27,8 +27,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17  // Update to Java 17 (recommended)
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         viewBinding = true
@@ -36,25 +36,26 @@ android {
 }
 
 dependencies {
-
+    // Core Android libraries
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
-    implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
+
+    // Firebase (use same BOM version as watch module)
+    implementation(platform("com.google.firebase:firebase-bom:32.6.0"))  // Align with watch module
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth") //authentication
-    implementation("com.google.firebase:firebase-firestore") // firestore for data
-    implementation("com.google.firebase:firebase-storage") // firebase storage for photos
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
     implementation("com.firebaseui:firebase-ui-auth:7.2.0")
-    implementation("androidx.activity:activity-compose:1.8.0'")
-    implementation("androidx.compose.material3:material3:1.1.2")
-    implementation("androidx.compose.ui:ui:1.5.4")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    // Glide (fixed syntax)
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

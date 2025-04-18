@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MAS_solution_2"
 include(":app")
- 
+include(":watch_gatherers")
