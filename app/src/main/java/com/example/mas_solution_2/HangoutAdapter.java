@@ -59,6 +59,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
 
         holder.nameTextView.setText(hangout.getName());
         String me = FirebaseAuth.getInstance().getUid();
+        holder.rsvpToggle.setOnCheckedChangeListener(null); // refresh it make sure it doens't stop workin
         holder.rsvpToggle.setChecked(hangout.getParticipants().contains(me)); // check is it in there first?
         holder.rsvpToggle.setEnabled(!hangout.isPast()); // disable if past event
         holder.rsvpToggle.setOnCheckedChangeListener(((buttonView, isChecked) -> { // do the stuff
@@ -70,7 +71,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
             }
             else{
                 FirebaseFirestore.getInstance().collection("hangouts").document(hangout.getId()).update("participants", FieldValue.arrayRemove(me)).addOnSuccessListener(unused -> {
-                    hangout.addParticipant(me);
+                    hangout.removeParticipant(me);
                     notifyDataSetChanged();
                 });
             }
