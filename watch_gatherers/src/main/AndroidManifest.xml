@@ -21,7 +21,6 @@
             android:name="com.google.android.wearable.standalone"
             android:value="false" />
 
-        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,9 +31,12 @@
             </intent-filter>
         </activity>
 
-        <!-- Group Hangouts Activity -->
         <activity
             android:name=".GroupHangoutsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AllHangoutsActivity"
             android:exported="false" />
     </application>
 </manifest>

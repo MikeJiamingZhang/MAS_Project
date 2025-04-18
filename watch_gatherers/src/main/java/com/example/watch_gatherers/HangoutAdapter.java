@@ -14,15 +14,30 @@ import com.google.firebase.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 
 public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutViewHolder> {
 
     private Context context;
     private List<Hangout> hangouts;
+    private boolean showGroupName;
+    private Map<String, String> groupIdToName;
 
     public HangoutAdapter(Context context, List<Hangout> hangouts) {
+        this(context, hangouts, false);
+    }
+
+    public HangoutAdapter(Context context, List<Hangout> hangouts, boolean showGroupName) {
         this.context = context;
         this.hangouts = hangouts;
+        this.showGroupName = showGroupName;
+
+        // Initialize group name lookup
+        this.groupIdToName = new HashMap<>();
+        groupIdToName.put("1", "Family");
+        groupIdToName.put("2", "College Friends");
+        groupIdToName.put("3", "Work Colleagues");
     }
 
     @NonNull
@@ -36,7 +51,13 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
     public void onBindViewHolder(@NonNull HangoutViewHolder holder, int position) {
         Hangout hangout = hangouts.get(position);
 
-        holder.nameTextView.setText(hangout.getName());
+        // Set name (with group name if showing all)
+        if (showGroupName && hangout.getGroupId() != null) {
+            String groupName = groupIdToName.getOrDefault(hangout.getGroupId(), "");
+            holder.nameTextView.setText(hangout.getName() + " (" + groupName + ")");
+        } else {
+            holder.nameTextView.setText(hangout.getName());
+        }
 
         // Format and set date
         Timestamp timestamp = hangout.getDate();

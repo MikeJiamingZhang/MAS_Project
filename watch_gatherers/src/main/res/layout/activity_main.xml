@@ -4,35 +4,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp"
     tools:context=".MainActivity"
     tools:deviceIds="wear">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         app:layout_boxedEdges="all">
 
-        <androidx.wear.widget.WearableRecyclerView
-            android:id="@+id/recycler_view"
+        <Button
+            android:id="@+id/btn_all_hangouts"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="vertical" />
-
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:text="All Upcoming Hangouts"
+            android:layout_margin="4dp"
+            android:textSize="12sp" />
 
-        <TextView
-            android:id="@+id/empty_view"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="No groups found"
-            android:textColor="@android:color/white"
-            android:visibility="gone" />
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-    </FrameLayout>
+            <androidx.wear.widget.WearableRecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical" />
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:id="@+id/empty_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
 </androidx.wear.widget.BoxInsetLayout>

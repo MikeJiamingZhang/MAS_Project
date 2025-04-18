@@ -4,9 +4,9 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
@@ -19,6 +19,7 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
     private WearableRecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView emptyView;
+    private Button allHangoutsButton;
     private List<Group> groups = new ArrayList<>();
 
     @Override
@@ -30,6 +31,13 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
         emptyView = findViewById(R.id.empty_view);
+        allHangoutsButton = findViewById(R.id.btn_all_hangouts);
+
+        // Set up the All Hangouts button
+        allHangoutsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AllHangoutsActivity.class);
+            startActivity(intent);
+        });
 
         // Set up recycler view with curved layout
         recyclerView.setEdgeItemsCenteringEnabled(true);
