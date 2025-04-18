@@ -36,6 +36,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.Timestamp;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -66,6 +67,7 @@ public class HangoutsActivity extends AppCompatActivity {
     private List<Group> userGroups = new ArrayList<>();
     private HangoutsPagerAdapter pagerAdapter;
     private ImageButton groupInfoButton;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +78,13 @@ public class HangoutsActivity extends AppCompatActivity {
             // Initialize Firebase
             firestore = FirebaseFirestore.getInstance();
             currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+            // Log screen view event
+            Bundle params = new Bundle();
+            params.putString(FirebaseAnalytics.Param.SCREEN_NAME, "Hangouts Screen");
+            params.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "HangoutsActivity");
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params);
 
             // Check if user is logged in
             if (currentUser == null) {
@@ -123,7 +132,8 @@ public class HangoutsActivity extends AppCompatActivity {
             ImageButton createHangoutButton = findViewById(R.id.btn_create_hangout);
             if (createHangoutButton != null) {
                 createHangoutButton.setOnClickListener(v -> {
-                    // Load user's groups before showing the dialog
+                    // Track create hangout button click
+                    mFirebaseAnalytics.logEvent("create_hangout_button_click", null);
                     loadUserGroups(() -> showCreateHangoutDialog());
                 });
             }
@@ -154,7 +164,6 @@ public class HangoutsActivity extends AppCompatActivity {
                         // Already on hangouts page
                         return true;
                     } else if (itemId == R.id.nav_profile) {
-                        // TODO: Implement profile page
                         Toast.makeText(this, "Profile page coming soon!", Toast.LENGTH_SHORT).show();
                         return true;
                     }
@@ -240,10 +249,6 @@ public class HangoutsActivity extends AppCompatActivity {
                                 Toast.makeText(this, "Join code copied to clipboard", Toast.LENGTH_SHORT).show();
                             });
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Error loading group info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
                     });
 
             // Set up close button
@@ -381,11 +386,6 @@ public class HangoutsActivity extends AppCompatActivity {
                             e.printStackTrace();
                             Toast.makeText(this, "Error loading groups. Please try again.", Toast.LENGTH_SHORT).show();
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error loading groups: " + e.getMessage());
-                        e.printStackTrace();
-                        Toast.makeText(this, "Error loading groups: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         } catch (Exception e) {
             Log.e(TAG, "Exception in loadUserGroups: " + e.getMessage());
@@ -581,6 +581,12 @@ public class HangoutsActivity extends AppCompatActivity {
                     .add(hangoutData)
                     .addOnSuccessListener(documentReference -> {
                         try {
+                            // Track hangout creation success
+                            Bundle params = new Bundle();
+                            params.putString(FirebaseAnalytics.Param.ITEM_ID, documentReference.getId());
+                            params.putString(FirebaseAnalytics.Param.ITEM_NAME, name);
+                            mFirebaseAnalytics.logEvent("hangout_created", params);
+                            
                             Toast.makeText(this, "Hangout created successfully!", Toast.LENGTH_SHORT).show();
 
                             // Create a chat room for the hangout
@@ -594,11 +600,6 @@ public class HangoutsActivity extends AppCompatActivity {
                             Log.e(TAG, "Error after successful hangout creation: " + e.getMessage());
                             e.printStackTrace();
                         }
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error creating hangout: " + e.getMessage());
-                        e.printStackTrace();
-                        Toast.makeText(this, "Error creating hangout: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         } catch (Exception e) {
             Log.e(TAG, "Exception in createHangout: " + e.getMessage());

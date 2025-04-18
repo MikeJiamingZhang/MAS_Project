@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -32,6 +33,7 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
     private List<Group> groups = new ArrayList<>();
 
     private FirebaseFirestore firestore;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +42,13 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
 
         // Initialize Firebase
         firestore = FirebaseFirestore.getInstance();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        // Log screen view event
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.SCREEN_NAME, "Main Groups Screen");
+        params.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params);
 
         // Initialize views
         recyclerView = findViewById(R.id.recycler_view);
@@ -49,6 +58,9 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
 
         // Set up the All Hangouts button
         allHangoutsButton.setOnClickListener(v -> {
+            // Track button click
+            mFirebaseAnalytics.logEvent("all_hangouts_click", null);
+            
             Intent intent = new Intent(this, AllHangoutsActivity.class);
             startActivity(intent);
         });
@@ -68,25 +80,25 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
         progressBar.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.GONE);
         emptyView.setVisibility(View.GONE);
-
+        
         // Use the hardcoded user ID to query groups
         firestore.collection("groups")
                 .whereArrayContains("members", HARDCODED_USER_ID)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
-
+                    
                     groups.clear();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         Group group = document.toObject(Group.class);
                         group.setId(document.getId());
                         groups.add(group);
                     }
-
+                    
                     // Setup adapter with data
                     GroupAdapter adapter = new GroupAdapter(this, groups, this);
                     recyclerView.setAdapter(adapter);
-
+                    
                     if (groups.isEmpty()) {
                         recyclerView.setVisibility(View.GONE);
                         emptyView.setText("No groups found for this user");
@@ -94,6 +106,11 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
                     } else {
                         recyclerView.setVisibility(View.VISIBLE);
                         emptyView.setVisibility(View.GONE);
+                        
+                        // Log groups loaded event
+                        Bundle params = new Bundle();
+                        params.putInt("group_count", groups.size());
+                        mFirebaseAnalytics.logEvent("groups_loaded", params);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -106,6 +123,12 @@ public class MainActivity extends Activity implements GroupAdapter.GroupClickLis
 
     @Override
     public void onGroupClick(Group group) {
+        // Track group click
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.ITEM_ID, group.getId());
+        params.putString(FirebaseAnalytics.Param.ITEM_NAME, group.getName());
+        mFirebaseAnalytics.logEvent("group_selected", params);
+        
         Intent intent = new Intent(this, GroupHangoutsActivity.class);
         intent.putExtra("GROUP_ID", group.getId());
         intent.putExtra("GROUP_NAME", group.getName());

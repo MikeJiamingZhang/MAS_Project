@@ -1,6 +1,7 @@
 package com.example.watch_gatherers;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
     private List<Hangout> hangouts;
     private boolean showGroupName;
     private Map<String, String> groupIdToName = new HashMap<>();
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public HangoutAdapter(Context context, List<Hangout> hangouts) {
         this(context, hangouts, false);
@@ -32,6 +35,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         this.context = context;
         this.hangouts = hangouts;
         this.showGroupName = showGroupName;
+        this.mFirebaseAnalytics = FirebaseAnalytics.getInstance(context);
     }
 
     // Add this method to fix the error
@@ -74,6 +78,19 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         }
 
         holder.locationTextView.setText(hangout.getLocation());
+        
+        // Set click listener to track hangout view
+        holder.itemView.setOnClickListener(v -> {
+            // Track hangout view event
+            Bundle params = new Bundle();
+            params.putString(FirebaseAnalytics.Param.ITEM_ID, hangout.getId());
+            params.putString(FirebaseAnalytics.Param.ITEM_NAME, hangout.getName());
+            params.putString("hangout_location", hangout.getLocation());
+            if (hangout.getGroupId() != null) {
+                params.putString("group_id", hangout.getGroupId());
+            }
+            mFirebaseAnalytics.logEvent("hangout_viewed", params);
+        });
     }
 
     @Override

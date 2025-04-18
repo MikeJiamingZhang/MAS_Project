@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -70,10 +71,14 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String groupName;
     private boolean sendingLocation = false;
     private String me = FirebaseAuth.getInstance().getUid();
+    private FirebaseAnalytics mFirebaseAnalytics;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         // log in
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -178,6 +183,13 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
 
         // calling to receive updates on votes
         receiveVoteLocations(roomId);
+
+        // Log page visit event
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.SCREEN_NAME, "Main Groups Screen");
+        params.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params);
+
     }
 
     private void loadHangoutDetails() {
@@ -264,20 +276,28 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                             ref.update(
                                     "vote", FieldValue.increment(-1),
                                     "voters", FieldValue.arrayRemove(uid)
-                            ).addOnSuccessListener(aVoid ->
-                                    Toast.makeText(getApplicationContext(), "Retracted!", Toast.LENGTH_SHORT).show()
-                            ).addOnFailureListener(e ->
-                                    Toast.makeText(getApplicationContext(), "Retract failed!", Toast.LENGTH_SHORT).show()
-                            );
+                            ).addOnSuccessListener(aVoid -> {
+                                // Track vote retraction
+                                Bundle params = new Bundle();
+                                params.putString(FirebaseAnalytics.Param.ITEM_ID, ref.getId());
+                                params.putString(FirebaseAnalytics.Param.ITEM_NAME, location);
+                                mFirebaseAnalytics.logEvent("vote_retracted", params);
+                                
+                                Toast.makeText(getApplicationContext(), "Retracted!", Toast.LENGTH_SHORT).show();
+                            });
                         } else {
                             ref.update(
                                     "vote", FieldValue.increment(1),
                                     "voters", FieldValue.arrayUnion(uid)
-                            ).addOnSuccessListener(aVoid ->
-                                    Toast.makeText(getApplicationContext(), "Vote counted!", Toast.LENGTH_SHORT).show()
-                            ).addOnFailureListener(e ->
-                                    Toast.makeText(getApplicationContext(), "Vote failed!", Toast.LENGTH_SHORT).show()
-                            );
+                            ).addOnSuccessListener(aVoid -> {
+                                // Track vote cast
+                                Bundle params = new Bundle();
+                                params.putString(FirebaseAnalytics.Param.ITEM_ID, ref.getId());
+                                params.putString(FirebaseAnalytics.Param.ITEM_NAME, location);
+                                mFirebaseAnalytics.logEvent("vote_cast", params);
+                                
+                                Toast.makeText(getApplicationContext(), "Vote counted!", Toast.LENGTH_SHORT).show();
+                            });
                         }
                     }
                 });
@@ -295,9 +315,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 DocumentReference ref = querySnapshot.getDocuments().get(0).getReference(); // there should only be 1
                 ref.delete()
                         .addOnSuccessListener(aVoid ->
-                                Toast.makeText(getApplicationContext(), "Location removed!", Toast.LENGTH_SHORT).show())
-                        .addOnFailureListener(e ->
-                                Toast.makeText(getApplicationContext(), "Failed to remove location!", Toast.LENGTH_SHORT).show());
+                                Toast.makeText(getApplicationContext(), "Location removed!", Toast.LENGTH_SHORT).show());
             } else {
                 Toast.makeText(getApplicationContext(), "Location not found", Toast.LENGTH_SHORT).show();
             }
@@ -313,7 +331,13 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 data.put("location", location);
                 data.put("vote", 0);
                 data.put("voters", new ArrayList<String>());
-                voteLocation.add(data);
+                voteLocation.add(data).addOnSuccessListener(documentReference -> {
+                    // Track location added
+                    Bundle params = new Bundle();
+                    params.putString(FirebaseAnalytics.Param.ITEM_ID, documentReference.getId());
+                    params.putString(FirebaseAnalytics.Param.ITEM_NAME, location);
+                    mFirebaseAnalytics.logEvent("location_added", params);
+                });
             } else {
                 Toast.makeText(getApplicationContext(), "Location exists, please vote!", Toast.LENGTH_LONG).show();
             }
@@ -472,7 +496,14 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             if (members != null) {
                 data.put("participants", members);
             }
-            firestore.collection("hangouts").add(data).addOnSuccessListener(docRef -> {Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
+            firestore.collection("hangouts").add(data).addOnSuccessListener(docRef -> {
+                // Track finalized hangout creation
+                Bundle params = new Bundle();
+                params.putString(FirebaseAnalytics.Param.ITEM_ID, docRef.getId());
+                params.putString(FirebaseAnalytics.Param.ITEM_NAME, name);
+                mFirebaseAnalytics.logEvent("finalized_hangout_created", params);
+                
+                Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
             });
         });
     }

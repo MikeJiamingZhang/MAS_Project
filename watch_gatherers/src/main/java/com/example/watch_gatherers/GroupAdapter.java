@@ -1,6 +1,7 @@
 package com.example.watch_gatherers;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import java.util.List;
 
 public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHolder> {
@@ -16,6 +19,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
     private Context context;
     private List<Group> groups;
     private GroupClickListener listener;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public interface GroupClickListener {
         void onGroupClick(Group group);
@@ -25,6 +29,7 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
         this.context = context;
         this.groups = groups;
         this.listener = listener;
+        this.mFirebaseAnalytics = FirebaseAnalytics.getInstance(context);
     }
 
     @NonNull
@@ -40,6 +45,12 @@ public class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.GroupViewHol
         holder.nameTextView.setText(group.getName());
 
         holder.itemView.setOnClickListener(v -> {
+            // Track group click event
+            Bundle params = new Bundle();
+            params.putString(FirebaseAnalytics.Param.ITEM_ID, group.getId());
+            params.putString(FirebaseAnalytics.Param.ITEM_NAME, group.getName());
+            mFirebaseAnalytics.logEvent("group_clicked", params);
+            
             if (listener != null) {
                 listener.onGroupClick(group);
             }

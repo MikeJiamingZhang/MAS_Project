@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -33,6 +34,7 @@ public class GroupHangoutsActivity extends Activity {
     private HangoutAdapter adapter;
 
     private FirebaseFirestore firestore;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +56,14 @@ public class GroupHangoutsActivity extends Activity {
 
         // Initialize Firebase
         firestore = FirebaseFirestore.getInstance();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        // Log screen view event
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.SCREEN_NAME, "Group Hangouts: " + groupName);
+        params.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "GroupHangoutsActivity");
+        params.putString("group_id", groupId);
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params);
 
         // Initialize views
         titleView = findViewById(R.id.title);
@@ -117,6 +127,12 @@ public class GroupHangoutsActivity extends Activity {
                     } else {
                         recyclerView.setVisibility(View.VISIBLE);
                         emptyView.setVisibility(View.GONE);
+                        
+                        // Log hangouts loaded event
+                        Bundle params = new Bundle();
+                        params.putInt("hangout_count", hangouts.size());
+                        params.putString("group_id", groupId);
+                        mFirebaseAnalytics.logEvent("hangouts_loaded", params);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -124,6 +140,7 @@ public class GroupHangoutsActivity extends Activity {
                     progressBar.setVisibility(View.GONE);
                     emptyView.setText("Error loading hangouts: " + e.getMessage());
                     emptyView.setVisibility(View.VISIBLE);
+
                 });
     }
 }
