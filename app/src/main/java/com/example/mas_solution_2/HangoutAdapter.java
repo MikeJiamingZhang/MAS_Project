@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -17,6 +18,9 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -54,6 +58,24 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         Hangout hangout = hangoutList.get(position);
 
         holder.nameTextView.setText(hangout.getName());
+        String me = FirebaseAuth.getInstance().getUid();
+        holder.rsvpToggle.setOnCheckedChangeListener(null); // refresh it make sure it doens't stop workin
+        holder.rsvpToggle.setChecked(hangout.getParticipants().contains(me)); // check is it in there first?
+        holder.rsvpToggle.setEnabled(!hangout.isPast()); // disable if past event
+        holder.rsvpToggle.setOnCheckedChangeListener(((buttonView, isChecked) -> { // do the stuff
+            if(isChecked){
+                FirebaseFirestore.getInstance().collection("hangouts").document(hangout.getId()).update("participants", FieldValue.arrayUnion(me)).addOnSuccessListener(unused -> {
+                    hangout.addParticipant(me);
+                    notifyDataSetChanged();
+                });
+            }
+            else{
+                FirebaseFirestore.getInstance().collection("hangouts").document(hangout.getId()).update("participants", FieldValue.arrayRemove(me)).addOnSuccessListener(unused -> {
+                    hangout.removeParticipant(me);
+                    notifyDataSetChanged();
+                });
+            }
+        }));
 
         // Format and display date
         Timestamp timestamp = hangout.getDate();
@@ -130,6 +152,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
         TextView dateTextView;
         TextView locationTextView;
         MaterialButton actionButton;
+        SwitchCompat rsvpToggle;
 
         public HangoutViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -138,6 +161,7 @@ public class HangoutAdapter extends RecyclerView.Adapter<HangoutAdapter.HangoutV
             dateTextView = itemView.findViewById(R.id.hangout_date);
             locationTextView = itemView.findViewById(R.id.hangout_location);
             actionButton = itemView.findViewById(R.id.action_button);
+            rsvpToggle = itemView.findViewById(R.id.rsvpSwitch);
         }
     }
 }

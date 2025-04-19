@@ -14,12 +14,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,7 +36,6 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -153,9 +150,13 @@ public class HangoutsActivity extends AppCompatActivity {
                     } else if (itemId == R.id.nav_calendar) {
                         // Already on hangouts page
                         return true;
-                    } else if (itemId == R.id.nav_profile) {
-                        // TODO: Implement profile page
-                        Toast.makeText(this, "Profile page coming soon!", Toast.LENGTH_SHORT).show();
+                    } else if (itemId == R.id.nav_logout) {
+                        //Toast.makeText(this, "Profile page coming soon!", Toast.LENGTH_SHORT).show();
+                        new AlertDialog.Builder(this).setTitle("You want to logout?").setPositiveButton("yes", ((dialog, which) -> {
+                            FirebaseAuth.getInstance().signOut();
+                            startActivity(new Intent(this, authentication.class));
+                            finish();
+                        })).setNegativeButton("no", null).show();
                         return true;
                     }
                     return false;

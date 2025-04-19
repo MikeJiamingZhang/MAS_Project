@@ -3,7 +3,6 @@ package com.example.mas_solution_2;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,7 +13,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -85,9 +83,12 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
                 // Navigate directly to the hangouts page without requiring group selection
                 startActivity(new Intent(this, HangoutsActivity.class));
                 return true;
-            } else if (itemId == R.id.nav_profile) {
-                // TODO: Implement profile page
-                Toast.makeText(this, "Profile page coming soon!", Toast.LENGTH_SHORT).show();
+            } else if (itemId == R.id.nav_logout) {
+                new AlertDialog.Builder(this).setTitle("You want to logout?").setPositiveButton("yes", ((dialog, which) -> {
+                    FirebaseAuth.getInstance().signOut();
+                    startActivity(new Intent(this, authentication.class));
+                    finish();
+                })).setNegativeButton("no", null).show();
                 return true;
             }
             return false;

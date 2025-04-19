@@ -1,16 +1,18 @@
 package com.example.mas_solution_2;
 
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.mas_solution_2.databinding.ActivityMainBinding;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -22,15 +24,16 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.storage.FirebaseStorage;
 
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 // Firestore structure
@@ -69,7 +72,8 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     private String roomId = "001"; // Default room
     private String groupName;
     private boolean sendingLocation = false;
-    FirebaseStorage storage = FirebaseStorage.getInstance();
+    private String me = FirebaseAuth.getInstance().getUid();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 }
             } else if (!groupId.isEmpty()) {
                 roomId = groupId; // Use group ID as room ID
+                isMyRoomAllVoted(roomId);
                 if (!groupName.isEmpty()) {
                     getSupportActionBar().setTitle(groupName);
                 } else {
@@ -395,6 +400,7 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
     @Override
     public void onBackPressed() {
         // Override back button behavior
+        super.onBackPressed();
         if (hangoutId != null && !hangoutId.isEmpty()) {
             // If we came from a hangout, go back to hangout detail
             Intent intent = new Intent(this, HangoutDetailActivity.class);
@@ -405,5 +411,92 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
             startActivity(new Intent(this, GroupsActivity.class));
         }
         finish();
+    }
+
+    public void isMyRoomAllVoted(String roomId){
+        firestore.collection("groups").document(groupId).get().addOnSuccessListener(groupDoc -> {
+            List<String> members = (List<String>) groupDoc.get("members");
+            String owner = groupDoc.getString("createdBy");
+            if (members == null || owner == null || !me.equals(owner)) return; // return if they don't exist or I am not the owner
+            // edit hangouts
+            firestore.collection("hangouts").whereEqualTo("groupID", groupId).whereEqualTo("confirmed",true).get().addOnSuccessListener(existing->{
+                if (!existing.isEmpty()) return; // The group already has a hangout planned
+                firestore.collection("chatHistory").document(roomId).collection("votes").get().addOnSuccessListener(voteDocs -> {
+                            Set<String> allVoters = new HashSet<>();
+                            for (QueryDocumentSnapshot doc : voteDocs) {
+                                List<String> voters = (List<String>) doc.get("voters");
+                                if (voters != null) allVoters.addAll(voters);
+                            }
+                            if (allVoters.containsAll(members)) {
+                                showPopup(voteDocs);
+                            }
+                        });
+            });
+        });
+    }
+
+    public void showPopup(QuerySnapshot voteDocs){
+        // Add vote counts. Else, prompt the user to select locations (which should not happen).
+        Map<String, Integer> voteCounts = new HashMap<>();
+        for (QueryDocumentSnapshot doc : voteDocs) {
+            String location = doc.getString("location");
+            Long votes = doc.getLong("vote");
+            if (location != null && votes != null) {
+                voteCounts.put(location, votes.intValue());
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "Please select/vote a location!", Toast.LENGTH_LONG).show();
+            }
+        }
+        if (voteCounts.isEmpty()) return;
+        String topLocation = Collections.max(voteCounts.entrySet(), Map.Entry.comparingByValue()).getKey();
+        // Use popup to get name and dates
+        View dialogView = getLayoutInflater().inflate(R.layout.activity_hangoutpopup, null);
+        EditText nameInput = dialogView.findViewById(R.id.hangout_name);
+        DatePicker datePicker = dialogView.findViewById(R.id.date_picker);
+        TextView setHangoutTime = dialogView.findViewById(R.id.editTextTime);
+        Calendar calendar = Calendar.getInstance();
+        setHangoutTime.setOnClickListener(v -> {
+            TimePickerDialog timePickerDialog = new TimePickerDialog(
+                    this,
+                    (view, hourOfDay, minute) -> {
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        calendar.set(Calendar.MINUTE, minute);
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
+                        setHangoutTime.setText(timeFormat.format(calendar.getTime()));
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    false
+            );
+            timePickerDialog.show();
+        });
+        // Finally show the dialog
+        new AlertDialog.Builder(this).setTitle("Create Hangout!").setMessage("Everyone has voted! Let's finalize your hangout at: " + topLocation).setView(dialogView).setPositiveButton("Create", (dialog, which) -> {
+            String name = nameInput.getText().toString().trim();
+            //Calendar calendar = Calendar.getInstance();
+            //String hourAndMinute = setHangoutTime.getText();
+            calendar.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+            createFinalizedHangout(name, topLocation, calendar.getTime()); // Actually create the entry
+        }).setNegativeButton("Cancel", null).show();
+    }
+
+    // create the hangout and add to firestore, just like before
+    public void createFinalizedHangout(String name, String location, Date date) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", name);
+        data.put("location", location);
+        data.put("date", new Timestamp(date));
+        data.put("groupId", groupId);
+        data.put("createdBy", FirebaseAuth.getInstance().getUid());
+        data.put("confirmed", true);
+        firestore.collection("groups").document(groupId).get().addOnSuccessListener(groupDoc -> {
+            List<String> members = (List<String>) groupDoc.get("members");
+            if (members != null) {
+                data.put("participants", members);
+            }
+            firestore.collection("hangouts").add(data).addOnSuccessListener(docRef -> {Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
+            });
+        });
     }
 }
