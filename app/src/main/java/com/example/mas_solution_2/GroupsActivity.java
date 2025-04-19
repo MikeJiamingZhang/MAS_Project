@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
@@ -38,11 +39,13 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
     private List<Group> groupList;
     private FirebaseFirestore firestore;
     private FirebaseUser currentUser;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_groups);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         // Initialize Firebase
         firestore = FirebaseFirestore.getInstance();
@@ -81,6 +84,8 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
                 return true;
             } else if (itemId == R.id.nav_calendar) {
                 // Navigate directly to the hangouts page without requiring group selection
+                Bundle bundle = new Bundle();
+                mFirebaseAnalytics.logEvent("all_hangouts_page_visited", bundle);
                 startActivity(new Intent(this, HangoutsActivity.class));
                 return true;
             } else if (itemId == R.id.nav_logout) {
@@ -144,6 +149,8 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
             }
 
             createGroup(groupName, joinCode);
+            Bundle bundle = new Bundle();
+            mFirebaseAnalytics.logEvent("group_created", bundle);
             dialog.dismiss();
         });
     }
@@ -171,6 +178,8 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
             }
 
             joinGroup(joinCode);
+            Bundle bundle = new Bundle();
+            mFirebaseAnalytics.logEvent("group_joined", bundle);
             dialog.dismiss();
         });
     }
