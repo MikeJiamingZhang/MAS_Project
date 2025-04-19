@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "52142709873",
+    "project_id": "mas-project-solution2",
+    "storage_bucket": "mas-project-solution2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:52142709873:android:983155506df26fa8638fd0",
+        "android_client_info": {
+          "package_name": "com.example.mas_solution_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjHwoghJpxj4JsINGA-Pcd8ymbqjqMFH8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:52142709873:android:3f35c0db0b71aac8638fd0",
+        "android_client_info": {
+          "package_name": "com.example.watch_gatherers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjHwoghJpxj4JsINGA-Pcd8ymbqjqMFH8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

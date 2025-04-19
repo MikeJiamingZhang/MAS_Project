@@ -4,10 +4,21 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-03-25T02:25:51.688073200Z">
+        <DropdownSelection timestamp="2025-04-18T19:32:10.624715800Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\jiamz\.android\avd\Pixel_6_API_31.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\samre\.android\avd\Wear_OS_Small_Round_API_34.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="watch_gatherers">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-04-18T19:32:17.491514100Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\samre\.android\avd\Wear_OS_Small_Round_API_34.avd" />
             </handle>
           </Target>
         </DropdownSelection>
