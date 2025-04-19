@@ -171,7 +171,7 @@ public class HangoutDetailActivity extends AppCompatActivity implements PhotoAda
             return;
         }
         */
-        // TODO: Load real hangout from Firestore
+
         firestore.collection("hangouts").document(hangoutId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {

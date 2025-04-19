@@ -84,8 +84,11 @@ public class GroupsActivity extends AppCompatActivity implements GroupAdapter.Gr
                 startActivity(new Intent(this, HangoutsActivity.class));
                 return true;
             } else if (itemId == R.id.nav_logout) {
-                // TODO: Implement profile page
-                Toast.makeText(this, "Profile page coming soon!", Toast.LENGTH_SHORT).show();
+                new AlertDialog.Builder(this).setTitle("You want to logout?").setPositiveButton("yes", ((dialog, which) -> {
+                    FirebaseAuth.getInstance().signOut();
+                    startActivity(new Intent(this, authentication.class));
+                    finish();
+                })).setNegativeButton("no", null).show();
                 return true;
             }
             return false;
