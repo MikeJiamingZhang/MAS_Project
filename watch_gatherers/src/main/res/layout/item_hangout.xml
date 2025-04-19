@@ -28,20 +28,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
+            android:paddingTop="2dp"
             android:text="Date"
             android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:paddingTop="2dp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/hangout_location"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
+            android:paddingTop="2dp"
             android:text="Location"
             android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:paddingTop="2dp" />
+            android:textSize="12sp" />
+
+        <Switch
+            android:id="@+id/rsvpSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="RSVP" />
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>
