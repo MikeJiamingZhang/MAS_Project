@@ -522,6 +522,12 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 params.putString(FirebaseAnalytics.Param.ITEM_NAME, name);
                 mFirebaseAnalytics.logEvent("finalized_hangout_created", params);
                 Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
+                firestore.collection("chatHistory").document(roomId).collection("votes").get().addOnSuccessListener(voteDocs -> { // delte locations after hangout created
+                    for (QueryDocumentSnapshot doc : voteDocs) {
+                            doc.getReference().delete();
+                    }
+                });
+                sendMessage(roomId, "Admin", "Hangout Created!");
             });
         });
     }
