@@ -496,6 +496,13 @@ public class MainActivity extends AppCompatActivity implements voteAdapter.voteL
                 data.put("participants", members);
             }
             firestore.collection("hangouts").add(data).addOnSuccessListener(docRef -> {Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Hangout created!", Toast.LENGTH_SHORT).show();
+                firestore.collection("chatHistory").document(roomId).collection("votes").get().addOnSuccessListener(voteDocs -> { // delte locations after hangout created
+                    for (QueryDocumentSnapshot doc : voteDocs) {
+                        doc.getReference().delete();
+                    }
+                });
+                sendMessage(roomId, "Admin", "Hangout Created!");
             });
         });
     }
