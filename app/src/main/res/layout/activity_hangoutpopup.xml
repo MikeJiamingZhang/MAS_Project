@@ -13,7 +13,7 @@
     <TextView
         android:id="@+id/editTextTime"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="41dp"
         android:layout_marginTop="16dp"
         android:clickable="true"
         android:drawableEnd="@android:drawable/ic_menu_recent_history"
@@ -24,8 +24,8 @@
 
     <DatePicker
         android:id="@+id/date_picker"
-        android:layout_width="wrap_content"
-        android:layout_height="485dp"
+        android:layout_width="301dp"
+        android:layout_height="197dp"
         android:calendarViewShown="true" />
 
 </LinearLayout>
